@@ -18,6 +18,11 @@ const wss = new WebSocket.Server({ server });
 app.use(cors());
 app.use(bodyParser.json());
 
+// Redirect root to GitHub project page
+app.get('/', (req, res) => {
+  res.redirect(301, 'https://github.com/lmangani/discopeer');
+});
+
 // Rate limiting configuration
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
