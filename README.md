@@ -19,32 +19,13 @@ This service allows peers to announce their presence and discover other peers th
 
 ## Quick Start
 
-### Using Docker
-
-```bash
-# Build the image
-docker build -t peer-discovery .
-
-# Run the container
-docker run -p 3000:3000 peer-discovery
-```
-
-### Manual Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Start the server
-npm start
-```
-
-## API Usage
-
 ### Register a Peer
 
 ```bash
-curl -X POST http://localhost:3000/subscribe/myhash \
+secretHash=$(shuf -er -n20  {A..Z} {a..z} {0..9} | tr -d '\n')
+echo $secretHash
+
+curl -X POST "https://discopeer.fly.dev/subscribe/$secretHash" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "service1",
@@ -59,18 +40,19 @@ curl -X POST http://localhost:3000/subscribe/myhash \
 ### Discover Peers
 
 ```bash
-curl http://localhost:3000/discovery/myhash
+curl ""https://discopeer.fly.dev/discovery/$secretHash"
 ```
 
 ### WebSocket Updates
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3000');
+const secretHash = 'somesupersafestuff'
+const ws = new WebSocket('wss://discopeer.fly.dev');
 
 // Subscribe to updates
 ws.send(JSON.stringify({
   type: 'subscribe',
-  hash: 'myhash'
+  hash: SECRET
 }));
 
 // Listen for peer updates
