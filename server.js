@@ -91,10 +91,29 @@ wss.on('connection', (ws, req) => {
 const generateId = () => crypto.randomBytes(16).toString('hex');
 
 const getClientAddress = (req) => {
-  const ip = req.headers['x-forwarded-for'] || 
-             req.connection.remoteAddress || 
-             req.socket.remoteAddress;
-  const port = req.connection.remotePort || req.socket.remotePort;
+  let ip;
+  
+  // Get the last IP from x-forwarded-for header or fallback to socket
+  if (req.headers['x-forwarded-for']) {
+    const ips = req.headers['x-forwarded-for'].split(',');
+    ip = ips[ips.length - 1].trim();
+  } else {
+    ip = req.socket.remoteAddress;
+  }
+  
+  // Clean up the IP address
+  if (ip) {
+    // Remove IPv4-mapped IPv6 prefix
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+    // Handle multiple IPv6 addresses
+    if (ip.includes(',')) {
+      ip = ip.split(',').pop().trim();
+    }
+  }
+  
+  const port = req.socket.remotePort;
   return `${ip}:${port}`;
 };
 
