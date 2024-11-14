@@ -1,8 +1,8 @@
 name: Docker Publish
 
 on:
-   release:
-     type: [ "create" ]
+  release:
+    types: [created]
 
 env:
   REGISTRY: ghcr.io
