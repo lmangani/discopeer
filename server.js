@@ -158,7 +158,7 @@ const generateDeterministicPeerId = (name, endpoint, sourceAddress) => {
 
 // Validation middleware
 const validatePeerData = (req, res, next) => {
-  const { name, endpoint, ttl, metadata, peerId  } = req.body;
+  const { name, endpoint, metadata, peerId  } = req.body;
   
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Invalid name parameter' });
@@ -168,13 +168,15 @@ const validatePeerData = (req, res, next) => {
     return res.status(400).json({ error: 'Invalid endpoint parameter' });
   }
 
-  if (ttl) {
-      try {
-        ttl = parseInt(ttl);
-        if (ttl < 0) {
-          throw new Error('Parameter is negative!');
-        }
-      } catch(e) { return res.status(400).json({ error: 'Invalid TTL parameter', cause: e }); }
+  if (req.body.ttl) {
+    try {
+      req.body.ttl = parseInt(req.body.ttl);
+      if (req.body.ttl < 0) {
+        throw new Error('Parameter is negative!');
+      }
+    } catch(e) {
+      return res.status(400).json({ error: 'Invalid TTL parameter', cause: e.message });
+    }
   }
 
   if (metadata && typeof metadata !== 'object') {
