@@ -151,7 +151,7 @@ const notifyPeerChange = (hash, peers) => {
 const generateDeterministicPeerId = (name, endpoint, sourceAddress) => {
   return crypto
     .createHash('sha256')
-    .update(`${name}:${endpoint}:${sourceAddress}`)
+    .update(`${name}:${endpoint}`)
     .digest('hex')
     .substring(0, 32); // Take first 32 chars for a reasonable length
 };
