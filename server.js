@@ -224,6 +224,30 @@ app.get('/discovery/:secretHash', (req, res) => {
   res.status(200).json({ peers: activePeers });
 });
 
+// NDJSON discovery endpoint
+app.get('/discovery/:secretHash/ndjson', (req, res) => {
+  const { secretHash } = req.params;
+  const peers = peerCache.get(secretHash) || [];
+  const activePeers = filterActivePeers(peers);
+  
+  // Set appropriate headers for NDJSON
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.setHeader('Transfer-Encoding', 'chunked');
+  
+  // Send peers one by one in NDJSON format
+  activePeers.forEach(peer => {
+    res.write(JSON.stringify(peer) + '\n');
+  });
+  
+  // Update cache if needed (same as JSON endpoint)
+  if (activePeers.length < peers.length) {
+    const maxTTL = Math.max(...activePeers.map(peer => peer.ttl));
+    peerCache.set(secretHash, activePeers, maxTTL * 1000);
+    notifyPeerChange(secretHash, activePeers);
+  }
+  res.end();
+});
+
 // Heartbeat endpoint
 app.post('/heartbeat/:secretHash/:peerId', (req, res) => {
   const { secretHash, peerId } = req.params;
