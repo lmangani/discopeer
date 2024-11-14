@@ -147,9 +147,18 @@ const notifyPeerChange = (hash, peers) => {
   }
 };
 
+// Function to generate deterministic peer ID based on peer properties
+const generateDeterministicPeerId = (name, endpoint, sourceAddress) => {
+  return crypto
+    .createHash('sha256')
+    .update(`${name}:${endpoint}:${sourceAddress}`)
+    .digest('hex')
+    .substring(0, 32); // Take first 32 chars for a reasonable length
+};
+
 // Validation middleware
 const validatePeerData = (req, res, next) => {
-  const { name, endpoint, ttl, metadata } = req.body;
+  const { name, endpoint, ttl, metadata, peerId  } = req.body;
   
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'Invalid name parameter' });
@@ -171,6 +180,10 @@ const validatePeerData = (req, res, next) => {
   if (metadata && typeof metadata !== 'object') {
     return res.status(400).json({ error: 'Invalid metadata format' });
   }
+
+  if (peerId && typeof peerId !== 'string') {
+    return res.status(400).json({ error: 'Invalid peerId format' });
+  }
   
   next();
 };
@@ -178,18 +191,25 @@ const validatePeerData = (req, res, next) => {
 // Subscribe endpoint
 app.post('/subscribe/:secretHash', validatePeerData, (req, res) => {
   const { secretHash } = req.params;
-  const { name, endpoint, ttl = 300, metadata = {} } = req.body;
+  const { name, endpoint, ttl = 300, metadata = {}, peerId: clientProvidedPeerId } = req.body;
+  
+  const sourceAddress = getClientAddress(req);
+  
+  // Use client-provided peerId or generate a deterministic one
+  const peerId = clientProvidedPeerId || generateDeterministicPeerId(name, endpoint, sourceAddress);
   
   let peers = peerCache.get(secretHash) || [];
-  peers = peers.filter(peer => peer.name !== name);
+  
+  // Remove existing peer with same peerId instead of filtering by name
+  peers = peers.filter(peer => peer.peerId !== peerId);
   
   const peerData = {
     name,
     endpoint,
     ttl,
     metadata,
-    peerId: generateId(),
-    sourceAddress: getClientAddress(req),
+    peerId,
+    sourceAddress,
     registeredAt: Date.now()
   };
   
@@ -203,9 +223,9 @@ app.post('/subscribe/:secretHash', validatePeerData, (req, res) => {
   
   res.status(200).json({
     message: 'Successfully registered',
-    peerId: peerData.peerId,
+    peerId,
     ttl,
-    sourceAddress: peerData.sourceAddress
+    sourceAddress
   });
 });
 
