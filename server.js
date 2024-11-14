@@ -158,11 +158,16 @@ const validatePeerData = (req, res, next) => {
   if (!endpoint || typeof endpoint !== 'string') {
     return res.status(400).json({ error: 'Invalid endpoint parameter' });
   }
-  
-  if (ttl && (!Number.isInteger(ttl) || ttl < 0)) {
-    return res.status(400).json({ error: 'Invalid TTL parameter' });
+
+  if (ttl) {
+      try {
+        ttl = parseInt(ttl);
+        if ((!Number.isInteger(ttl) || ttl < 0)) {
+          throw new Error('Parameter is not a number!');
+        }
+      } catch(e) { return res.status(400).json({ error: 'Invalid TTL parameter' }); }
   }
-  
+
   if (metadata && typeof metadata !== 'object') {
     return res.status(400).json({ error: 'Invalid metadata format' });
   }
